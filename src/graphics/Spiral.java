@@ -62,8 +62,8 @@ public class Spiral extends JPanel  {
 	}
 
 	Spiral() {
-		cx = panW/2;
-		cy = panH/2;
+		x = panW/2;
+		y = panH/2;
 		img = new BufferedImage(panW,panH, BufferedImage.TYPE_INT_RGB);
 		this.setBackground(Color.WHITE);	//the JPanel has a white background, but you'll never see it ...
 		this.setPreferredSize(new Dimension(panW, panH));
@@ -80,22 +80,21 @@ public class Spiral extends JPanel  {
 
 	class Timer1 implements ActionListener {
 		
-		private boolean reverse = false;
 		public void actionPerformed(ActionEvent e) {
 
 			//get the graphics object from the image so that we can draw on it.
+			int newx, newy;
+			double newr = r;
 			Graphics2D g2 = img.createGraphics();
+			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 			
-			//g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-			g2.setStroke(new BasicStroke(2));
 			
 			// --- Do all drawing here ---
-			g2.setColor(c);
-
+		
 			//SPEED\\
 			//for (int i = 0; i < 100; i++) {
 
-			if (!reverse) {
+			/*if (!reverse) {
 				r += 0.15;
 				angle += 0.015;
 			}
@@ -112,12 +111,27 @@ public class Spiral extends JPanel  {
 				reverse = false;				
 				r = 0.0;
 				cx++;
-			}			
+			}*/	
 
-			x = (int) (cx + r*Math.cos(angle));
-			y = (int) (cy + r*Math.sin(angle));
 
-			g2.drawLine(x,y,x,y);
+			//g2.drawLine(x,y,x,y);
+			// https://www.desmos.com/calculator
+			newr = 1;
+			// DRAW STAR :)
+			
+			newx = (int) (x+newr);
+			newy = (int) (y+newr);
+			
+			g2.setStroke(new BasicStroke(3));
+			g2.setColor(Color.BLACK);
+			g2.drawLine(x, y, (int)x, (int)y);
+			g2.setStroke(new BasicStroke(2));
+			g2.setColor(Color.WHITE);
+			g2.drawLine(newx, newy, (int)newx, (int)newy);
+			
+			x=newx;
+			y=newy;
+			r=newr;
 			//SPEED\\
 			// }
 			//--- end of drawing code ---
@@ -135,11 +149,11 @@ public class Spiral extends JPanel  {
 		void saveTimer() {
 			long now = System.currentTimeMillis();
 			long elapsed = (now - lastTime)/1000;
-			if (elapsed > ENDTIME) {
+			/*if (elapsed > ENDTIME) {
 				saveImage(img);
 				//System.exit(0); //or just 
 				timer.stop();
-			}
+			}*/
 		}
 	}
 
