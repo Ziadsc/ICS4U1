@@ -40,6 +40,11 @@ public class Spiral extends JPanel  {
 	Timer timer;
 
 	private int x,y; 
+	double newxrate = 1.3;
+	double newyrate = 3.5;
+	Color h = Color.YELLOW;
+	private int xlimit, ylimit;
+	int type = 0;
 	private Color c = Color.WHITE;
 	private double angle = 0.0;
 	private double r = 0.0;
@@ -62,8 +67,8 @@ public class Spiral extends JPanel  {
 	}
 
 	Spiral() {
-		x = panW/2;
-		y = panH/2;
+		x = (panW/2);
+		y = (panH/2-50);
 		img = new BufferedImage(panW,panH, BufferedImage.TYPE_INT_RGB);
 		this.setBackground(Color.WHITE);	//the JPanel has a white background, but you'll never see it ...
 		this.setPreferredSize(new Dimension(panW, panH));
@@ -118,16 +123,60 @@ public class Spiral extends JPanel  {
 			// https://www.desmos.com/calculator
 			newr = 1;
 			// DRAW STAR :)
-			
-			newx = (int) (x+newr);
-			newy = (int) (y+newr);
-			
 			g2.setStroke(new BasicStroke(3));
 			g2.setColor(Color.BLACK);
 			g2.drawLine(x, y, (int)x, (int)y);
+			
+			if ((y+(newr*newyrate)) >= (panH/2+50) && type == 0) {
+				xlimit = x-110;
+				newxrate = -4.0;
+				newyrate = -3.0;
+				type = 1;
+				h = Color.WHITE;
+				System.out.println(type);
+			} else if ((x+(newr*newxrate)) <= xlimit && type == 1) {
+				xlimit = x+125;
+				newxrate = 4.0;
+				newyrate = 0;
+				type=2;
+				h = Color.RED;
+				System.out.println(type);
+			} else if ((x+(newr*newxrate)) >= xlimit && type == 2) {
+				ylimit = y+75;
+				newxrate = -4.0;
+				newyrate = 3.0;
+				type = 3;
+				h = Color.BLUE;
+				System.out.println(type);
+			} else if ((y+(newr*newyrate)) >= ylimit && type == 3) {
+				ylimit = y-100;
+				newxrate = 1.3;
+				newyrate = -3.5;
+				type = 4;
+				h = Color.GREEN;
+				System.out.println(type);
+			} else if ((y+(newr*newyrate)) <= ylimit && type == 4) {
+				ylimit = 0;
+				newxrate = 1.3;
+				newyrate = 3.5;
+				type = 0;
+				h= Color.YELLOW;
+				System.out.println(type);
+			}
+			newx = (int) (x+(newr*newxrate));
+			newy = (int) (y+(newr*newyrate));
+			//154
 			g2.setStroke(new BasicStroke(2));
-			g2.setColor(Color.WHITE);
+			g2.setColor(h);
 			g2.drawLine(newx, newy, (int)newx, (int)newy);
+			//g2.drawLine((panW/2)-60, panW/2, (panW/2)+70, (panW/2)+26);
+			//g2.setColor(Color.RED);
+			//g2.drawLine((panW/2), (panW/2)+70, (panW/2)-26, (panW/2)-70);
+			/*g2.setColor(Color.GREEN);
+			int tempx, tempy;
+			tempx = 500;
+			tempy = 500;
+			g2.drawLine(tempx, tempy, tempx/35, tempy/13);*/
 			
 			x=newx;
 			y=newy;
