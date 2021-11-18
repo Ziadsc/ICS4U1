@@ -5,23 +5,16 @@
  */
 package animations;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics;
-import java.awt.GridLayout;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.Timer;
+import javax.swing.*;
 
-public class BallBounce implements ActionListener {
+public class GraphicsTest implements ActionListener {
 
 	public static void main(String[] args) {
-		new BallBounce();
+		new GraphicsTest();
 	}
 
 	static final int PANW = 800;
@@ -46,7 +39,7 @@ public class BallBounce implements ActionListener {
 		}
 	}
 	
-	BallBounce(){
+	GraphicsTest(){
 		//setup Jframe
 		JFrame frame = new JFrame();
 		frame.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );		
@@ -126,7 +119,7 @@ public class BallBounce implements ActionListener {
 				if (!paused) {
 					ball.backupvx = ball.vx;
 					ball.vx = 0;
-					pause.setText("R");
+					pause.setText("RESUME");
 				} else {
 					ball.vx = ball.backupvx;
 					ball.backupvx = 0;

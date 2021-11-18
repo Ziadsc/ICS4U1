@@ -22,6 +22,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
+
 /* This is a new version of the program that draws a spiral. 
 * 
 * The idea is to calculate new points and draw them, updating the screen regularly.
@@ -40,8 +41,12 @@ public class Spiral extends JPanel  {
 	Timer timer;
 
 	private int x,y; 
+	double xrate, yrate;
 	double newxrate = 1.3;
 	double newyrate = 3.5;
+	double speed = 1;
+	double speedrate = 0.3;
+	double newspeed = 1;
 	Color h = Color.YELLOW;
 	private int xlimit, ylimit;
 	int type = 0;
@@ -54,6 +59,7 @@ public class Spiral extends JPanel  {
 	BufferedImage img;
 	static String fpath="";
 	static String fname="Spiral1.png";
+	
 
 	public static void main(String[] args) {
 		JFrame frame = new JFrame("Spiral");		
@@ -68,7 +74,7 @@ public class Spiral extends JPanel  {
 
 	Spiral() {
 		x = (panW/2);
-		y = (panH/2-50);
+		y = (panH/2-100);
 		img = new BufferedImage(panW,panH, BufferedImage.TYPE_INT_RGB);
 		this.setBackground(Color.WHITE);	//the JPanel has a white background, but you'll never see it ...
 		this.setPreferredSize(new Dimension(panW, panH));
@@ -91,7 +97,7 @@ public class Spiral extends JPanel  {
 			int newx, newy;
 			double newr = r;
 			Graphics2D g2 = img.createGraphics();
-			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			//g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 			
 			
 			// --- Do all drawing here ---
@@ -122,53 +128,65 @@ public class Spiral extends JPanel  {
 			//g2.drawLine(x,y,x,y);
 			// https://www.desmos.com/calculator
 			newr = 1;
+			newspeed += speedrate;
 			// DRAW STAR :)
-			g2.setStroke(new BasicStroke(3));
+			g2.setStroke(new BasicStroke(4));
 			g2.setColor(Color.BLACK);
-			g2.drawLine(x, y, (int)x, (int)y);
+			g2.drawLine(x, y, (int)(x-(xrate*speed)), (int)(y-(yrate*speed)));
 			
-			if ((y+(newr*newyrate)) >= (panH/2+50) && type == 0) {
-				xlimit = x-110;
+			if ((y+(newr*newyrate)) >= (panH/2+100) && type == 0) {
+				xlimit = panW/2-100;
 				newxrate = -4.0;
 				newyrate = -3.0;
 				type = 1;
 				h = Color.WHITE;
+				newspeed = 1;
 				System.out.println(type);
 			} else if ((x+(newr*newxrate)) <= xlimit && type == 1) {
-				xlimit = x+125;
+				xlimit = panW/2+100;
 				newxrate = 4.0;
 				newyrate = 0;
 				type=2;
 				h = Color.RED;
+				newspeed = 1;
 				System.out.println(type);
 			} else if ((x+(newr*newxrate)) >= xlimit && type == 2) {
-				ylimit = y+75;
+				ylimit = panH/2+100;
 				newxrate = -4.0;
 				newyrate = 3.0;
 				type = 3;
 				h = Color.BLUE;
+				newspeed = 1;
 				System.out.println(type);
 			} else if ((y+(newr*newyrate)) >= ylimit && type == 3) {
-				ylimit = y-100;
-				newxrate = 1.3;
-				newyrate = -3.5;
+				ylimit = panH/2-100;
+				newxrate = 2.0;
+				newyrate = -6.0;
 				type = 4;
 				h = Color.GREEN;
+				newspeed = 1;
 				System.out.println(type);
 			} else if ((y+(newr*newyrate)) <= ylimit && type == 4) {
-				ylimit = 0;
+				ylimit = panH/2+100;
 				newxrate = 1.3;
 				newyrate = 3.5;
+				x = panW/2;
+				y = panH/2-100;
 				type = 0;
 				h= Color.YELLOW;
+				newspeed = 1;
 				System.out.println(type);
 			}
 			newx = (int) (x+(newr*newxrate));
 			newy = (int) (y+(newr*newyrate));
 			//154
-			g2.setStroke(new BasicStroke(2));
-			g2.setColor(h);
-			g2.drawLine(newx, newy, (int)newx, (int)newy);
+			g2.setStroke(new BasicStroke(4));
+			g2.setColor(Color.WHITE);
+			g2.drawLine(newx, newy, (int)(newx-(newxrate*newspeed)), (int)(newy-(newyrate*newspeed)));
+			
+			/*g2.setStroke(new BasicStroke(4));
+			g2.setColor(Color.WHITE);
+			g2.drawLine(newx, newy, newx, newy);*/
 			//g2.drawLine((panW/2)-60, panW/2, (panW/2)+70, (panW/2)+26);
 			//g2.setColor(Color.RED);
 			//g2.drawLine((panW/2), (panW/2)+70, (panW/2)-26, (panW/2)-70);
@@ -180,7 +198,9 @@ public class Spiral extends JPanel  {
 			
 			x=newx;
 			y=newy;
-			r=newr;
+			xrate=newxrate;
+			yrate=newyrate;
+			speed=newspeed;
 			//SPEED\\
 			// }
 			//--- end of drawing code ---
