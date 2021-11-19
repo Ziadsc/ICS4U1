@@ -126,7 +126,7 @@ public class BallBounce implements ActionListener {
 				if (!paused) {
 					ball.backupvx = ball.vx;
 					ball.vx = 0;
-					pause.setText("R");
+					pause.setText("UNPAUSE");
 				} else {
 					ball.vx = ball.backupvx;
 					ball.backupvx = 0;
