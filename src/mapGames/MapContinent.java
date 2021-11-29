@@ -41,8 +41,7 @@ public class MapContinent {
 
 	// global variables
 	int[][] board = new int[GRID][GRID];
-	boolean hitwall = false;
-
+	
 	MapContinent() { // constructor
 		initGame();
 		createAndShowGUI();
@@ -178,76 +177,53 @@ public class MapContinent {
 		// PROBLEM 3: Once you have solved problem 2, now set things up so that if any
 		// part
 		// of a lake touches the edge of the board it becomes an ocean.
-		void findLakes(int x, int y) {
+		void findLakes(int x, int y, boolean rClick, int type) {
 			// call subroutine to colour in all contiguous lake squares
 			if (x < 0 || x >= GRID || y < 0 || y >= GRID)
 				return;
-			if (board[x][y] == OCEAN) {
-				hitwall = true;
-				findOceans(x, y);
-				hitwall = false;
-			}
-			if (board[x][y] != EMPTY)
+			if (board[x][y] == OCEAN && !rClick && type == LAKE)
+				findLakes(x, y, false, OCEAN);
+			if (board[x][y] != EMPTY && !rClick && type == LAKE)
 				return;
-			board[x][y] = LAKE;
-			if (x == 0 || y == 0 || x == GRID - 1 || y == GRID - 1 && board[x][y] == LAKE) {
-				hitwall = true;
-				findOceans(x, y);
-				hitwall = false;
+			if ((x == 0 || y == 0 || x == GRID - 1 || y == GRID - 1) && !rClick && type == LAKE)
+				findLakes(x, y, false, OCEAN);
+			if (board[x][y] != LAKE && board[x][y] != EMPTY && type == OCEAN)
+				return;
+			if (!rClick)
+				board[x][y] = type;
+			
+			if (rClick) {
+				ActionListener task = new ActionListener() {
+		            public void actionPerformed(ActionEvent e) {
+		            	if (board[x + 1][y] == OCEAN || board[x - 1][y] == OCEAN || board[x][y + 1] == OCEAN || board[x][y - 1] == OCEAN)
+		            		findLakes(x, y, false, OCEAN);
+		            	else if (board[x + 1][y] == LAKE || board[x - 1][y] == LAKE || board[x][y + 1] == LAKE || board[x][y - 1] == LAKE)
+		            		findLakes(x, y, false, LAKE);
+						repaint();
+		            }
+		        };
+		        Timer timer = new Timer(50, task);
+		        timer.setRepeats(false);
+		        timer.start();
+			} else {
+				ActionListener task = new ActionListener() {
+		            public void actionPerformed(ActionEvent e) {
+		            	findLakes(x + 1, y, false, type);
+		            	findLakes(x - 1, y, false, type);
+		            	findLakes(x, y + 1, false, type);
+		            	findLakes(x, y - 1, false, type);
+						repaint();
+		            }
+		        };
+		        Timer timer = new Timer(50, task);
+		        timer.setRepeats(false);
+		        timer.start();
 			}
-			ActionListener task = new ActionListener() {
-	            public void actionPerformed(ActionEvent e) {
-	            	findLakes(x + 1, y);
-	            	findLakes(x - 1, y);
-	            	findLakes(x, y + 1);
-	            	findLakes(x, y - 1);
-					repaint();
-	            }
-	        };
-	        Timer timer = new Timer(50, task);
-	        timer.setRepeats(false);
-	        timer.start();
 			/*
 			 * new java.util.Timer().schedule(new java.util.TimerTask() {
 			 * @Override public void run() { findLakes(x + 1, y); findLakes(x - 1, y);
 			 * findLakes(x, y + 1); findLakes(x, y - 1); repaint(); } }, 50);
 			 */
-		}
-
-		void findOceans(int x, int y) {
-			// call subroutine to colour in all contiguous lake squares
-			if (x < 0 || x >= GRID || y < 0 || y >= GRID)
-				return;
-			if (board[x][y] != LAKE && board[x][y] != EMPTY)
-				return;
-			board[x][y] = OCEAN;
-			
-			ActionListener task = new ActionListener() {
-	            public void actionPerformed(ActionEvent e) {
-	            	findOceans(x + 1, y);
-					findOceans(x - 1, y);
-					findOceans(x, y + 1);
-					findOceans(x, y - 1);
-					repaint();
-	            }
-	        };
-	        Timer timer = new Timer(50, task);
-	        timer.setRepeats(false);
-	        timer.start();
-			/*new java.util.Timer().schedule(new java.util.TimerTask() {
-				@Override
-				public void run() {
-					findOceans(x + 1, y);
-					findOceans(x - 1, y);
-					findOceans(x, y + 1);
-					findOceans(x, y - 1);
-					repaint();
-				}
-			}, 50);*/
-		}
-
-		void LakeHandler(int x, int y) {
-			findLakes(x, y);
 		}
 
 		class MyMouseListener extends MouseAdapter { // inner class inside DrawingPanel
@@ -263,6 +239,7 @@ public class MapContinent {
 					switch (board[i][j]) {
 					case LAND:
 						board[i][j] = EMPTY;
+						findLakes(i,j, true, LAKE);
 						break;
 					default:
 						board[i][j] = LAND;
@@ -271,7 +248,7 @@ public class MapContinent {
 					return;
 				}
 
-				LakeHandler(i, j);
+				findLakes(i, j, false, LAKE);
 				// repaint();
 			}
 		} // end of MyMouseListener class
