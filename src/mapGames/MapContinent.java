@@ -24,8 +24,9 @@ public class MapContinent {
 	}
 
 	// constants
-	final static int GRID = 128; // size of grid/board
-	final static int SQSIZE = 8; // size of each square in pixels
+	final static int GRID = 512; // size of grid/board
+	final static int SQSIZE = 1; // size of each square in pixels
+	final static int SPACING = 0;
 	final static int NUM_LAND = (GRID * GRID / 2); // number of land tiles
 
 	// terrain
@@ -47,6 +48,7 @@ public class MapContinent {
 	double avgHeight = 0.00;
 	JFrame frame = new JFrame("Mouse1: Place Water, Mouse2: Land, ScrollClick: ResetMap, N: Switch Generation Type");
 	boolean generation = true; // false = random, true = continents
+	int brushSize = 25;
 	
 	MapContinent() { // constructor
 		initGame();
@@ -64,10 +66,10 @@ public class MapContinent {
 			}
 		}
 		
-		if (!generation) 
-			makeRandomMap();
-		else
-			makeContinents();
+		//if (!generation) 
+			//makeRandomMap();
+		//else
+			//makeContinents();
 	}
 	
 
@@ -189,19 +191,19 @@ public class MapContinent {
 
 			if (terrain == EMPTY) {
 				g.setColor(COLOUREMPTY);
-				g.fillRect(blockX * i, blockY * j, blockX - 1, blockY - 1);
+				g.fillRect(blockX * i, blockY * j, blockX - SPACING, blockY - SPACING);
 			}
 			if (terrain == LAND) {
 				g.setColor(COLOURLAND);
-				g.fillRect(blockX * i, blockY * j, blockX - 1, blockY - 1);
+				g.fillRect(blockX * i, blockY * j, blockX - SPACING, blockY - SPACING);
 			}
 			if (terrain == LAKE) {
 				g.setColor(COLOURLAKE);
-				g.fillRect(blockX * i, blockY * j, blockX - 1, blockY - 1);
+				g.fillRect(blockX * i, blockY * j, blockX - SPACING, blockY - SPACING);
 			}
 			if (terrain == OCEAN) {
 				g.setColor(COLOUROCEAN);
-				g.fillRect(blockX * i, blockY * j, blockX - 1, blockY - 1);
+				g.fillRect(blockX * i, blockY * j, blockX - SPACING, blockY - SPACING);
 			}
 		}
 
@@ -266,10 +268,32 @@ public class MapContinent {
 				// calculate which square you clicked on
 				int i = (int) x / blockX;
 				int j = (int) y / blockY; // blockY/y
+				
 
 				// allow the right mouse button to toggle/cycle the terrain
 				if (e.getButton() == MouseEvent.BUTTON3) {
-					switch (board[i][j]) {
+					for (int row = 0; row < brushSize; row++) {
+						if (row+(i-brushSize/2) < GRID && row+(i-brushSize/2) > 0) {
+							for (int col = 0; col < brushSize; col++) {
+								if (col+(j-brushSize/2) < GRID && col+(j-brushSize/2) > 0) {
+									double d = Math.sqrt((brushSize/2 - row) * (brushSize/2 - row) + (brushSize/2 - col) * (brushSize/2 - col));
+									if (d <= brushSize/2) {
+										switch (board[i][j]) {
+										case LAND:
+											board[row+(i-brushSize/2)][col+(j-brushSize/2)] = EMPTY;
+											break;
+										default:
+											board[row+(i-brushSize/2)][col+(j-brushSize/2)] = LAND;
+										}
+									}
+								}
+							}
+						}
+						findLakes(i,j, true, LAKE);
+					}
+					repaint();
+					return;
+					/*switch (board[i][j]) {
 					case LAND:
 						board[i][j] = EMPTY;
 						findLakes(i,j, true, LAKE);
@@ -278,7 +302,7 @@ public class MapContinent {
 						board[i][j] = LAND;
 					}
 					repaint();
-					return;
+					return;*/
 				}
 				if (e.getButton() == MouseEvent.BUTTON2) {
 					initGame();
