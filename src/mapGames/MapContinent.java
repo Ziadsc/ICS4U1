@@ -7,6 +7,8 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
@@ -22,8 +24,8 @@ public class MapContinent {
 	}
 
 	// constants
-	final static int GRID = 32; // size of grid/board
-	final static int SQSIZE = 23; // size of each square in pixels
+	final static int GRID = 100; // size of grid/board
+	final static int SQSIZE = 12; // size of each square in pixels
 	final static int NUM_LAND = (GRID * GRID / 2); // number of land tiles
 
 	// terrain
@@ -38,9 +40,13 @@ public class MapContinent {
 	final static Color COLOURLAND = new Color(100, 200, 100);
 	final static Color COLOURLAKE = new Color(100, 100, 255);
 	final static Color COLOUROCEAN = new Color(10, 10, 130);
+	final static double REQHEIGHT = 4;
 
 	// global variables
 	int[][] board = new int[GRID][GRID];
+	double avgHeight = 0.00;
+	JFrame frame = new JFrame("Mouse1: Place Water, Mouse2: Land, ScrollClick: ResetMap, N: Switch Generation Type");
+	boolean generation = true; // false = random, true = continents
 	
 	MapContinent() { // constructor
 		initGame();
@@ -57,9 +63,11 @@ public class MapContinent {
 				board[i][j] = EMPTY;
 			}
 		}
-
-		makeRandomMap();
-		//makeContinents(); //this doesn't exist yet. It is for Problem#4.
+		
+		if (!generation) 
+			makeRandomMap();
+		else
+			makeContinents();
 	}
 	
 
@@ -83,15 +91,37 @@ public class MapContinent {
 	}
 	
 	void makeContinents() {
+		NoiseGenerator noise = new NoiseGenerator();
 		
-		return;
+		for (int y = 0; y < GRID; y++) {
+			for (int x = 0; x < GRID; x++) {
+				double value = noise.noise(x, y);
+				avgHeight += value;
+			}
+		}
+		avgHeight = (avgHeight / (GRID * GRID))*REQHEIGHT;
+		System.out.println(avgHeight);
+		for (int y = 0; y < GRID; y++) {
+			for (int x = 0; x < GRID; x++) {
+				double value = noise.noise(x, y);
+				if (avgHeight < 0) {
+					if (value > avgHeight) {
+						board[x][y] = LAND;
+					}
+				} else {
+					if (value < avgHeight) {
+						board[x][y] = LAND;
+					}
+				}
+			}
+		}
 	}
 
 	void createAndShowGUI() {
 		DrawingPanel panel = new DrawingPanel();
 
 		// JFrame.setDefaultLookAndFeelDecorated(true);
-		JFrame frame = new JFrame("Minesweeper Problem #1-4");
+		
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		Container content = frame.getContentPane();
 		// content.setLayout(new BorderLayout(2,2));
@@ -122,6 +152,9 @@ public class MapContinent {
 			this.setPreferredSize(new Dimension(GRID * SQSIZE, GRID * SQSIZE));
 			MyMouseListener ml = new MyMouseListener();
 			addMouseListener(ml);
+			MyKeyListener k1 = new MyKeyListener();
+			frame.addKeyListener(k1);
+			
 		}
 
 		// ** Called by createGUI()
@@ -156,19 +189,19 @@ public class MapContinent {
 
 			if (terrain == EMPTY) {
 				g.setColor(COLOUREMPTY);
-				g.fillRect(blockX * i + 1, blockY * j + 1, blockX - 2, blockY - 2);
+				g.fillRect(blockX * i, blockY * j, blockX - 1, blockY - 1);
 			}
 			if (terrain == LAND) {
 				g.setColor(COLOURLAND);
-				g.fillRect(blockX * i + 1, blockY * j + 1, blockX - 2, blockY - 2);
+				g.fillRect(blockX * i, blockY * j, blockX - 1, blockY - 1);
 			}
 			if (terrain == LAKE) {
 				g.setColor(COLOURLAKE);
-				g.fillRect(blockX * i + 1, blockY * j + 1, blockX - 2, blockY - 2);
+				g.fillRect(blockX * i, blockY * j, blockX - 1, blockY - 1);
 			}
 			if (terrain == OCEAN) {
 				g.setColor(COLOUROCEAN);
-				g.fillRect(blockX * i + 1, blockY * j + 1, blockX - 2, blockY - 2);
+				g.fillRect(blockX * i, blockY * j, blockX - 1, blockY - 1);
 			}
 		}
 
@@ -235,7 +268,7 @@ public class MapContinent {
 				int j = (int) y / blockY; // blockY/y
 
 				// allow the right mouse button to toggle/cycle the terrain
-				if (e.getButton() != MouseEvent.BUTTON1) {
+				if (e.getButton() == MouseEvent.BUTTON3) {
 					switch (board[i][j]) {
 					case LAND:
 						board[i][j] = EMPTY;
@@ -247,11 +280,38 @@ public class MapContinent {
 					repaint();
 					return;
 				}
-
+				if (e.getButton() == MouseEvent.BUTTON2) {
+					initGame();
+					repaint();
+					return;
+				}
 				findLakes(i, j, false, LAKE);
 				// repaint();
 			}
 		} // end of MyMouseListener class
+		
+		class MyKeyListener implements KeyListener {
+			@Override
+	        public void keyPressed(KeyEvent e) {
+	            if (e.getKeyChar() == 'n') {
+	            	generation = !generation;
+	            	initGame();
+	            	repaint();
+	            }
+	        }
+
+			@Override
+			public void keyTyped(KeyEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void keyReleased(KeyEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+		}
 
 	} // end of DrawingPanel class
 
