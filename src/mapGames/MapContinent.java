@@ -24,10 +24,11 @@ public class MapContinent {
 	}
 
 	// constants
-	final static int GRID = 512; // size of grid/board
-	final static int SQSIZE = 1; // size of each square in pixels
+	final static int GRID = 128; // size of grid/board (at higher values the timer begins to lag due to timer using too much cpu)
+	final static int SQSIZE = 4; // size of each square in pixels
 	final static int SPACING = 0;
 	final static int NUM_LAND = (GRID * GRID / 2); // number of land tiles
+	final static boolean USETIMER = true;
 
 	// terrain
 	final static int EMPTY = 0; // constant for empty tile. This is the terrain that needs to be a specific
@@ -66,10 +67,10 @@ public class MapContinent {
 			}
 		}
 		
-		//if (!generation) 
-			//makeRandomMap();
-		//else
-			//makeContinents();
+		if (!generation) 
+			makeRandomMap();
+		else
+			makeContinents();
 	}
 	
 
@@ -234,25 +235,34 @@ public class MapContinent {
 		            		findLakes(x, y, false, OCEAN);
 		            	else if (board[x + 1][y] == LAKE || board[x - 1][y] == LAKE || board[x][y + 1] == LAKE || board[x][y - 1] == LAKE)
 		            		findLakes(x, y, false, LAKE);
-						repaint();
+						
 		            }
 		        };
-		        Timer timer = new Timer(50, task);
+		        Timer timer = new Timer((int) (GRID*0.1), task);
 		        timer.setRepeats(false);
 		        timer.start();
+		        repaint();
 			} else {
+				if (USETIMER) {
 				ActionListener task = new ActionListener() {
 		            public void actionPerformed(ActionEvent e) {
 		            	findLakes(x + 1, y, false, type);
 		            	findLakes(x - 1, y, false, type);
 		            	findLakes(x, y + 1, false, type);
 		            	findLakes(x, y - 1, false, type);
-						repaint();
+						
 		            }
 		        };
-		        Timer timer = new Timer(50, task);
+		        Timer timer = new Timer((int) (GRID*0.1), task);
 		        timer.setRepeats(false);
 		        timer.start();
+		        } else {
+		        	findLakes(x + 1, y, false, type);
+	            	findLakes(x - 1, y, false, type);
+	            	findLakes(x, y + 1, false, type);
+	            	findLakes(x, y - 1, false, type);
+		        }
+		        repaint();
 			}
 			/*
 			 * new java.util.Timer().schedule(new java.util.TimerTask() {
@@ -272,13 +282,19 @@ public class MapContinent {
 
 				// allow the right mouse button to toggle/cycle the terrain
 				if (e.getButton() == MouseEvent.BUTTON3) {
+					/*int tiletype = 0;
+					boolean checked = false;
 					for (int row = 0; row < brushSize; row++) {
 						if (row+(i-brushSize/2) < GRID && row+(i-brushSize/2) > 0) {
 							for (int col = 0; col < brushSize; col++) {
 								if (col+(j-brushSize/2) < GRID && col+(j-brushSize/2) > 0) {
 									double d = Math.sqrt((brushSize/2 - row) * (brushSize/2 - row) + (brushSize/2 - col) * (brushSize/2 - col));
 									if (d <= brushSize/2) {
-										switch (board[i][j]) {
+										if (!checked) {
+											checked = true;
+											tiletype = board[i][j];
+										}
+										switch (tiletype) {
 										case LAND:
 											board[row+(i-brushSize/2)][col+(j-brushSize/2)] = EMPTY;
 											break;
@@ -288,11 +304,18 @@ public class MapContinent {
 									}
 								}
 							}
+						}Sphere brush (didn't finish too much work)*/
+						switch (board[i][j]) {
+						case LAND:
+							board[i][j] = EMPTY;
+							findLakes(i,j, true, LAKE);
+							break;
+						default:
+							board[i][j] = LAND;
 						}
-						findLakes(i,j, true, LAKE);
+						repaint();
+						return;
 					}
-					repaint();
-					return;
 					/*switch (board[i][j]) {
 					case LAND:
 						board[i][j] = EMPTY;
@@ -303,7 +326,6 @@ public class MapContinent {
 					}
 					repaint();
 					return;*/
-				}
 				if (e.getButton() == MouseEvent.BUTTON2) {
 					initGame();
 					repaint();
