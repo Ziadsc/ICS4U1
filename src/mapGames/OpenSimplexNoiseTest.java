@@ -9,20 +9,20 @@ import java.io.*;
 
 public class OpenSimplexNoiseTest
 {
-	private static final int WIDTH = 32;
-	private static final int HEIGHT = 32;
+	private static final int WIDTH = 512;
+	private static final int HEIGHT = 512;
 	private static final double FEATURE_SIZE = 4;
 
 	public static void main(String[] args)
 		throws IOException {
 		
-		OpenSimplexNoise noise = new OpenSimplexNoise();
+		NoiseGenerator noise = new NoiseGenerator();
 		BufferedImage image = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
 		for (int y = 0; y < HEIGHT; y++)
 		{
 			for (int x = 0; x < WIDTH; x++)
 			{
-				double value = noise.eval(x / FEATURE_SIZE, y / FEATURE_SIZE, 0.0);
+				double value = noise.noise(x , y );
 				int rgb = 0x010101 * (int)((value + 1) * 127.5);
 				image.setRGB(x, y, rgb);
 			}

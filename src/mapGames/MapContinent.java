@@ -11,7 +11,11 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 
+import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.Timer;
@@ -19,16 +23,15 @@ import javax.swing.Timer;
 //Starting class for MapContinent program
 
 public class MapContinent {
-	public static void main(String[] args) {
-		new MapContinent();
-	}
 
 	// constants
-	final static int GRID = 128; // size of grid/board (at higher values the timer begins to lag due to timer using too much cpu)
-	final static int SQSIZE = 4; // size of each square in pixels
+	final static int GRID = 512; // size of grid/board (at higher values the timer begins to lag due to timer using too much cpu)
+	int SQSIZE = 512/GRID; // size of each square in pixels
 	final static int SPACING = 0;
 	final static int NUM_LAND = (GRID * GRID / 2); // number of land tiles
-	final static boolean USETIMER = true;
+	final static boolean USETIMER = true; // Disables animations
+	final static boolean IGNOREEXCEPTION = false; // Game may not work due to game being bigger than monitor resolution
+	final static boolean DEBUG = true; // saves an image of the noise generation
 
 	// terrain
 	final static int EMPTY = 0; // constant for empty tile. This is the terrain that needs to be a specific
@@ -47,11 +50,22 @@ public class MapContinent {
 	// global variables
 	int[][] board = new int[GRID][GRID];
 	double avgHeight = 0.00;
-	JFrame frame = new JFrame("Mouse1: Place Water, Mouse2: Land, ScrollClick: ResetMap, N: Switch Generation Type");
+	JFrame frame = new JFrame("Mouse1: Place Water, Mouse2: Land, ScrollClick: New Map, N: Switch Generation Type, S: Save, L: Load");
 	boolean generation = true; // false = random, true = continents
 	int brushSize = 25;
+	boolean debounce = false;
+	
+	public static void main(String[] args) throws IOException {
+		if (GRID > 512 && !IGNOREEXCEPTION) {
+			throw new IOException("Grid cannot be bigger than 512!");   
+		}
+		new MapContinent();
+	}
 	
 	MapContinent() { // constructor
+		if (GRID > 512 && IGNOREEXCEPTION) {
+			SQSIZE = 1;
+		}
 		initGame();
 		createAndShowGUI();
 	}
@@ -102,7 +116,10 @@ public class MapContinent {
 				avgHeight += value;
 			}
 		}
-		avgHeight = (avgHeight / (GRID * GRID))*REQHEIGHT;
+		avgHeight = (avgHeight / (GRID * GRID))*((REQHEIGHT*10)/SQSIZE);
+		if (DEBUG) {
+			debugPerlinNoise(noise);
+		}
 		System.out.println(avgHeight);
 		for (int y = 0; y < GRID; y++) {
 			for (int x = 0; x < GRID; x++) {
@@ -117,6 +134,47 @@ public class MapContinent {
 					}
 				}
 			}
+		}
+		avgHeight = 0.00;
+	}
+	
+	void debugPerlinNoise(NoiseGenerator noise) {
+		BufferedImage image = new BufferedImage(GRID, GRID, BufferedImage.TYPE_INT_RGB);
+		for (int y = 0; y < GRID; y++)
+		{
+			for (int x = 0; x < GRID; x++)
+			{
+				double value = noise.noise(x , y );
+				double colour = ((value + 1)*127)%255;
+				int rgb = 0;
+				if (colour < 0) {
+					colour = -colour;
+				}
+				if (avgHeight < 0) {
+					if (value > avgHeight) {
+						rgb = new Color(1, (int) (colour), (int) (colour)).getRGB();
+					} else {
+						colour = 255-colour;
+						rgb = new Color((int) (colour), (int) (colour), (int) (colour)).getRGB();
+					}
+				} else {
+					if (value < avgHeight) {
+						colour = 255-colour;
+						rgb = new Color(1, (int) (colour), (int) (colour)).getRGB();
+					} else {
+						rgb = new Color((int) (colour), (int) (colour), (int) (colour)).getRGB();
+					}
+				}
+				
+				//int rgb = 0x010101 * (int)((value + 1) * 127.5);
+				image.setRGB(x, y, rgb);
+			}
+		}
+		try {
+			ImageIO.write(image, "png", new File("noise.png"));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 
@@ -215,14 +273,20 @@ public class MapContinent {
 		// of a lake touches the edge of the board it becomes an ocean.
 		void findLakes(int x, int y, boolean rClick, int type) {
 			// call subroutine to colour in all contiguous lake squares
+			if (debounce)
+				return;
 			if (x < 0 || x >= GRID || y < 0 || y >= GRID)
 				return;
-			if (board[x][y] == OCEAN && !rClick && type == LAKE)
-				findLakes(x, y, false, OCEAN);
+			if (board[x][y] == OCEAN && !rClick && type == LAKE) {
+				//findLakes(x, y, false, OCEAN);
+				return;
+			}
 			if (board[x][y] != EMPTY && !rClick && type == LAKE)
 				return;
-			if ((x == 0 || y == 0 || x == GRID - 1 || y == GRID - 1) && !rClick && type == LAKE)
+			if ((x == 0 || y == 0 || x == GRID - 1 || y == GRID - 1) && !rClick && type == LAKE) {
 				findLakes(x, y, false, OCEAN);
+				return;
+			}
 			if (board[x][y] != LAKE && board[x][y] != EMPTY && type == OCEAN)
 				return;
 			if (!rClick)
@@ -242,28 +306,34 @@ public class MapContinent {
 		        timer.setRepeats(false);
 		        timer.start();
 		        repaint();
+		        return;
 			} else {
 				if (USETIMER) {
-				ActionListener task = new ActionListener() {
-		            public void actionPerformed(ActionEvent e) {
-		            	findLakes(x + 1, y, false, type);
-		            	findLakes(x - 1, y, false, type);
-		            	findLakes(x, y + 1, false, type);
-		            	findLakes(x, y - 1, false, type);
-						
-		            }
-		        };
-		        Timer timer = new Timer((int) (GRID*0.1), task);
-		        timer.setRepeats(false);
-		        timer.start();
+					ActionListener task = new ActionListener() {
+			            public void actionPerformed(ActionEvent e) {
+			            	if (x+1 < GRID && (board[x+1][y] != type))
+								findLakes(x + 1, y, false, type);
+							if (x-1 >= 0 && (board[x-1][y] != type))
+								findLakes(x - 1, y, false, type);
+							if (y+1 < GRID && (board[x][y+1] != type))
+								findLakes(x, y + 1, false, type);
+							if (y-1 >= 0 && (board[x][y-1] != type))
+								findLakes(x, y - 1, false, type);
+							repaint();
+			            }
+			        };
+			        Timer timer = new Timer((int) (800/GRID), task);
+			        timer.setRepeats(false);
+			        timer.start();
+			        return;
 		        } else {
 		        	findLakes(x + 1, y, false, type);
 	            	findLakes(x - 1, y, false, type);
 	            	findLakes(x, y + 1, false, type);
 	            	findLakes(x, y - 1, false, type);
 		        }
-		        repaint();
 			}
+			repaint();
 			/*
 			 * new java.util.Timer().schedule(new java.util.TimerTask() {
 			 * @Override public void run() { findLakes(x + 1, y); findLakes(x - 1, y);
@@ -329,6 +399,17 @@ public class MapContinent {
 				if (e.getButton() == MouseEvent.BUTTON2) {
 					initGame();
 					repaint();
+					debounce = true;
+					ActionListener task = new ActionListener() {
+			            public void actionPerformed(ActionEvent e) {
+			            	debounce = false;
+							
+			            }
+			        };
+			        Timer timer = new Timer((int) (100), task);
+			        timer.setRepeats(false);
+			        timer.start();
+			        repaint();
 					return;
 				}
 				findLakes(i, j, false, LAKE);
@@ -341,8 +422,101 @@ public class MapContinent {
 	        public void keyPressed(KeyEvent e) {
 	            if (e.getKeyChar() == 'n') {
 	            	generation = !generation;
+	            	debounce = true;
+					ActionListener task = new ActionListener() {
+			            public void actionPerformed(ActionEvent e) {
+			            	debounce = false;
+							
+			            }
+			        };
+			        Timer timer = new Timer((int) (100), task);
+			        timer.setRepeats(false);
+			        timer.start();
+			        repaint();
 	            	initGame();
 	            	repaint();
+	            }
+	            if (e.getKeyChar() == 's') {
+	            	BufferedImage image = new BufferedImage(GRID, GRID, BufferedImage.TYPE_INT_RGB);
+					for (int y = 0; y < GRID; y++)
+					{
+						for (int x = 0; x < GRID; x++)
+						{
+							int rgb = 0;
+							if (board[x][y] == EMPTY) {
+								rgb = COLOUREMPTY.getRGB();
+							}
+							if (board[x][y] == LAND) {
+								rgb = COLOURLAND.getRGB();
+							}
+							if (board[x][y] == LAKE) {
+								rgb = COLOURLAKE.getRGB();
+							}
+							if (board[x][y] == OCEAN) {
+								rgb = COLOUROCEAN.getRGB();
+							}
+							
+							//int rgb = 0x010101 * (int)((value + 1) * 127.5);
+							image.setRGB(x, y, rgb);
+						}
+					}
+					try {
+						ImageIO.write(image, "png", new File("map.png"));
+					} catch (IOException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+	            }
+	            if (e.getKeyChar() == 'l') {
+	            	BufferedImage image;
+	            	debounce = true;
+	            	ActionListener task = new ActionListener() {
+			            public void actionPerformed(ActionEvent e) {
+			            	debounce = false;
+							
+			            }
+			        };
+			        Timer timer = new Timer((int) (100), task);
+			        timer.setRepeats(false);
+			        timer.start();
+					try {
+						image = ImageIO.read(new File("map.png"));
+						for (int y = 0; y < GRID; y++)
+						{
+							for (int x = 0; x < GRID; x++)
+							{	
+								int rgb = 0;
+								if (GRID>image.getWidth()) {
+									rgb = image.getRGB((int) (x/(GRID/image.getWidth())),(int) (y/(GRID/image.getWidth())));
+								} else if (GRID<image.getWidth()) {
+									// Down Sampling bigger image
+									rgb = image.getRGB((int) (((image.getWidth()/GRID)*(x))),(int) (((image.getWidth()/GRID)*(y))));
+								} else {
+									rgb = image.getRGB(x, y);
+								}
+								
+								if (rgb == COLOUREMPTY.getRGB()) {
+									board[x][y] = EMPTY;
+								}
+								if (rgb == COLOURLAND.getRGB()) {
+									board[x][y] = LAND;
+								}
+								if (rgb == COLOURLAKE.getRGB()) {
+									board[x][y] = LAKE;
+								}
+								if (rgb == COLOUROCEAN.getRGB()) {
+									board[x][y] = OCEAN;
+								}
+								
+								//int rgb = 0x010101 * (int)((value + 1) * 127.5);
+								
+							}
+						}
+						repaint();
+					} catch (IOException e2) {
+						// TODO Auto-generated catch block
+						e2.printStackTrace();
+					}
 	            }
 	        }
 
