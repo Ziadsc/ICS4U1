@@ -25,7 +25,7 @@ import javax.swing.Timer;
 public class MapContinent {
 
 	// constants
-	final static int GRID = 512; // size of grid/board (at higher values the timer begins to lag due to timer using too much cpu)
+	final static int GRID = 128; // size of grid/board (at higher values the timer begins to lag due to timer using too much cpu)
 	int SQSIZE = 512/GRID; // size of each square in pixels
 	final static int SPACING = 0;
 	final static int NUM_LAND = (GRID * GRID / 2); // number of land tiles
